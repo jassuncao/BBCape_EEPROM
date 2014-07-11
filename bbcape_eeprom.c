@@ -190,13 +190,39 @@ eeprom_write (EEPROM_HDR *e, char *fname)
 
   if ((f = fopen (fname, "wb")) == NULL)
     {
-      fprintf (stderr, "Cannot open file test.eeprom\n");
+      fprintf (stderr, "Cannot open file %s\n", fname);
       exit (1);
     }
-  fwrite (&epr, sizeof (EEPROM_HDR), 1, f);
+  fwrite (e, sizeof (EEPROM_HDR), 1, f);
   fclose (f);
   _dirty = 0;
 
+  return 0;
+}
+
+int
+eeprom_read (EEPROM_HDR *e, char *fname)
+{
+  FILE *f;
+  size_t count;
+
+  if (!e) return -1;
+
+  if ((f = fopen (fname, "rb")) == NULL)
+  {
+      fprintf (stderr, "Cannot open file %s\n", fname);
+	  return -1;
+  }
+    
+  count = fread (e, sizeof (EEPROM_HDR), 1, f);
+  fclose (f);
+  _dirty = 0;
+
+  if( count < 0 )
+  {
+	fprintf (stderr, "The eeprom file %s is too short  \n", fname);
+	return -1;
+  }
   return 0;
 }
 
@@ -234,8 +260,16 @@ cmd_general (EEPROM_HDR *e, char *buffer)
 	else fname = buffer + 2;
 	fprintf (stderr, "+ Writting EEPROM to file '%s'\n\n", fname);
 	eeprom_write (e, fname);
-	break;
+	break;	
       }
+	case 'r':
+	  {
+	if (strlen (buffer + 2) == 0) fname = "eeprom.bin";
+	else fname = buffer + 2;
+	fprintf (stderr, "+ Reading EEPROM from file '%s'\n\n", fname);
+	eeprom_read (e, fname);
+	break;
+	  }
     case 'd':
       {
 	eeprom_dump (e);
